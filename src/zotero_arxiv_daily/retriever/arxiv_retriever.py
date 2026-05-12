@@ -12,6 +12,8 @@ from queue import Empty
 from typing import Any, Callable, TypeVar
 from loguru import logger
 import requests
+import time
+import random
 
 T = TypeVar("T")
 
@@ -131,12 +133,31 @@ class ArxivRetriever(BaseRetriever):
             all_paper_ids = all_paper_ids[:10]
 
         # Get full information of each paper from arxiv api
+        batch_size = 5
+        
         bar = tqdm(total=len(all_paper_ids))
-        for i in range(0, len(all_paper_ids), 10):
-            search = arxiv.Search(id_list=all_paper_ids[i:i + 20])
+        
+        initial_sleep = random.randint(180, 420)
+        logger.info(f"Initial sleep {initial_sleep}s before arXiv API requests")
+        time.sleep(initial_sleep)
+        
+        for i in range(0, len(all_paper_ids), batch_size):
+            ids = all_paper_ids[i:i + batch_size]
+        
+            logger.info(
+                f"Fetching arXiv batch {i // batch_size + 1}/"
+                f"{(len(all_paper_ids) + batch_size - 1) // batch_size}, "
+                f"batch_size={len(ids)}, ids={ids}"
+            )
+        
+            search = arxiv.Search(id_list=ids)
             batch = list(client.results(search))
+        
             bar.update(len(batch))
             raw_papers.extend(batch)
+        
+            time.sleep(random.randint(60, 120))
+        
         bar.close()
 
         return raw_papers
