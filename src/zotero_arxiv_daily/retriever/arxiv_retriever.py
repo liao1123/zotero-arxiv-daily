@@ -113,7 +113,7 @@ class ArxivRetriever(BaseRetriever):
             raise ValueError("category must be specified for arxiv.")
 
     def _retrieve_raw_papers(self) -> list[ArxivResult]:
-        client = arxiv.Client(num_retries=10, delay_seconds=10)
+        client = arxiv.Client(num_retries=10, delay_seconds=60)
         query = '+'.join(self.config.source.arxiv.category)
         include_cross_list = self.config.source.arxiv.get("include_cross_list", False)
         # Get the latest paper from arxiv rss feed
@@ -132,7 +132,7 @@ class ArxivRetriever(BaseRetriever):
 
         # Get full information of each paper from arxiv api
         bar = tqdm(total=len(all_paper_ids))
-        for i in range(0, len(all_paper_ids), 20):
+        for i in range(0, len(all_paper_ids), 10):
             search = arxiv.Search(id_list=all_paper_ids[i:i + 20])
             batch = list(client.results(search))
             bar.update(len(batch))
